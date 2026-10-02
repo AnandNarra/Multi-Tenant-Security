@@ -63,9 +63,11 @@ export const registerOrganization = async (req, res) => {
       // Create initial ADMIN User
       await tx.insert(users).values({
         organizationId: newOrg.id,
+        name: organizationName.trim(),
         email: normalizedEmail,
         passwordHash,
         role: 'ADMIN',
+        status: 'ACTIVE',
       });
 
       return newOrg;
@@ -129,7 +131,15 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 3. Verify Password with bcrypt
+    // 3. Status check: Inactive users cannot log in (do not expose account status)
+    if (user.status && user.status !== 'ACTIVE') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    // 4. Verify Password with bcrypt
     const isPasswordValid = await comparePassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -139,7 +149,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 4. Retrieve Organization Details
+    // 5. Retrieve Organization Details
     const [org] = await db
       .select()
       .from(organizations)
@@ -153,7 +163,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 5. Generate JWT Access and Refresh Tokens
+    // 6. Generate JWT Access and Refresh Tokens
     const tokenPayload = {
       sub: user.id,
       organizationId: user.organizationId,
@@ -163,7 +173,7 @@ export const loginUser = async (req, res) => {
     const accessToken = generateAccessToken(tokenPayload);
     const refreshToken = generateRefreshToken({ sub: user.id });
 
-    // 6. Hash and Save Refresh Token in Database
+    // 7. Hash and Save Refresh Token in Database
     const tokenHash = hashToken(refreshToken);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
@@ -173,7 +183,7 @@ export const loginUser = async (req, res) => {
       expiresAt,
     });
 
-    // 7. Set HTTP-Only Refresh Token Cookie
+    // 8. Set HTTP-Only Refresh Token Cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -182,7 +192,7 @@ export const loginUser = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // 8. Return Safe Response
+    // 9. Return Safe Response
     return res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -190,8 +200,10 @@ export const loginUser = async (req, res) => {
         accessToken,
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
           role: user.role,
+          status: user.status,
           organizationId: user.organizationId,
         },
         organization: {

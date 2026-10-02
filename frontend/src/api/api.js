@@ -28,4 +28,10 @@ export const organizationAPI = {
   create: (orgData) => api.post('/organizations', orgData),
 };
 
+export const userAPI = {
+  getAll: () => api.get('/users'),
+  create: (userData) => api.post('/createUser', userData),
+  createInUsers: (userData) => api.post('/users', userData),
+};
+
 export default api;
