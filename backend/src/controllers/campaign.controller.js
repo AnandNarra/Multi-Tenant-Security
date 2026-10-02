@@ -132,6 +132,8 @@ export const getCampaigns = async (req, res) => {
     const sortBy = req.query.sortBy || 'createdAt';
     const sortOrder = (req.query.sortOrder || 'desc').toLowerCase();
 
+    const isUserRole = req.user.role === 'USER';
+
     // Build filter conditions
     const conditions = [eq(campaigns.organizationId, organizationId)];
 
@@ -149,11 +151,20 @@ export const getCampaigns = async (req, res) => {
       );
     }
 
+    if (isUserRole) {
+      conditions.push(eq(campaignUsers.userId, req.user.id));
+    }
+
     // Get total matching count
-    const [countResult] = await db
+    let countQuery = db
       .select({ count: sql`cast(count(distinct ${campaigns.id}) as int)` })
-      .from(campaigns)
-      .where(and(...conditions));
+      .from(campaigns);
+
+    if (isUserRole) {
+      countQuery = countQuery.innerJoin(campaignUsers, eq(campaignUsers.campaignId, campaigns.id));
+    }
+
+    const [countResult] = await countQuery.where(and(...conditions));
 
     const total = countResult?.count || 0;
     const totalPages = Math.ceil(total / limit) || 1;
@@ -168,7 +179,7 @@ export const getCampaigns = async (req, res) => {
     const orderClause = sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
 
     // Fetch paginated campaigns with member count
-    const orgCampaigns = await db
+    let listQuery = db
       .select({
         id: campaigns.id,
         organizationId: campaigns.organizationId,
@@ -179,8 +190,15 @@ export const getCampaigns = async (req, res) => {
         updatedAt: campaigns.updatedAt,
         memberCount: sql`cast(count(${campaignUsers.id}) as int)`,
       })
-      .from(campaigns)
-      .leftJoin(campaignUsers, eq(campaignUsers.campaignId, campaigns.id))
+      .from(campaigns);
+
+    if (isUserRole) {
+      listQuery = listQuery.innerJoin(campaignUsers, eq(campaignUsers.campaignId, campaigns.id));
+    } else {
+      listQuery = listQuery.leftJoin(campaignUsers, eq(campaignUsers.campaignId, campaigns.id));
+    }
+
+    const orgCampaigns = await listQuery
       .where(and(...conditions))
       .groupBy(campaigns.id)
       .orderBy(orderClause)
@@ -230,6 +248,7 @@ export const getCampaignById = async (req, res) => {
     }
 
     const organizationId = req.user.organizationId;
+    const isUserRole = req.user.role === 'USER';
 
     const [campaign] = await db
       .select({
@@ -255,6 +274,27 @@ export const getCampaignById = async (req, res) => {
         success: false,
         message: 'Campaign not found',
       });
+    }
+
+    // For USER role, check if assigned to this campaign
+    if (isUserRole) {
+      const [assignment] = await db
+        .select({ id: campaignUsers.id })
+        .from(campaignUsers)
+        .where(
+          and(
+            eq(campaignUsers.campaignId, id),
+            eq(campaignUsers.userId, req.user.id)
+          )
+        )
+        .limit(1);
+
+      if (!assignment) {
+        return res.status(404).json({
+          success: false,
+          message: 'Campaign not found',
+        });
+      }
     }
 
     // Retrieve assigned users for this campaign (excluding passwordHash)

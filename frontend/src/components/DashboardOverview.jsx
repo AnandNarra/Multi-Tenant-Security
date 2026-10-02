@@ -1,17 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  LayoutGrid,
-  Building2,
-  ShieldCheck,
-  ShieldAlert,
-  Users,
-  FileText,
-  Activity,
-  ArrowRight,
-  AlertTriangle,
-  CheckCircle2,
-} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { securityEventAPI, auditLogAPI, campaignAPI, userAPI } from '../api/api';
 
@@ -88,86 +76,72 @@ const DashboardOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#0284c7] to-cyan-600 rounded-2xl p-6 text-white shadow-lg shadow-sky-500/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider backdrop-blur-xs">
-            Organization Dashboard
-          </span>
-          <h2 className="text-2xl font-bold tracking-tight mt-2">
-            Welcome back, {user?.name || 'Administrator'}
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Dashboard Overview
           </h2>
-          <p className="text-xs text-sky-100 mt-1 max-w-xl">
-            {organization?.name || 'Your organization'} is secured with multi-tenant isolation, real-time security events, and audit logging.
+          <p className="text-xs text-slate-500 mt-1">
+            Platform overview, security telemetry, and recent tenant activity.
           </p>
         </div>
-
-        <div className="flex items-center gap-2">
-          <NavLink
-            to="/admin/events"
-            className="px-4 py-2 rounded-xl bg-white text-[#0284c7] font-semibold text-xs shadow-sm hover:bg-sky-50 transition-colors"
-          >
-            View Security Events
-          </NavLink>
-        </div>
+        {loading && (
+          <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-md animate-pulse">
+            Loading data...
+          </span>
+        )}
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Security Events
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600">
-              <ShieldAlert className="w-4 h-4" />
+        {loading ? (
+          Array.from({ length: 4 }).map((_, idx) => (
+            <div
+              key={idx}
+              className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs animate-pulse space-y-3"
+            >
+              <div className="h-3 bg-slate-200 rounded w-24"></div>
+              <div className="h-7 bg-slate-200 rounded w-16"></div>
+              <div className="h-2.5 bg-slate-100 rounded w-32"></div>
             </div>
-          </div>
-          <div className="mt-3 text-2xl font-bold text-slate-900">{stats.eventsTotal}</div>
-          <div className="flex items-center gap-1.5 text-[11px] text-amber-600 font-medium mt-1">
-            <AlertTriangle className="w-3 h-3" />
-            <span>{stats.openThreats} open threats</span>
-          </div>
-        </div>
+          ))
+        ) : (
+          <>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Security Events
+              </div>
+              <div className="mt-3 text-2xl font-bold text-slate-900">{stats.eventsTotal}</div>
+              <div className="text-[11px] text-amber-700 font-medium mt-1">
+                {stats.openThreats} open threats
+              </div>
+            </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Audit Trail
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-              <FileText className="w-4 h-4" />
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Audit Trail
+              </div>
+              <div className="mt-3 text-2xl font-bold text-slate-900">{stats.auditTotal}</div>
+              <p className="text-[11px] text-slate-400 mt-1">Compliance actions recorded</p>
             </div>
-          </div>
-          <div className="mt-3 text-2xl font-bold text-slate-900">{stats.auditTotal}</div>
-          <p className="text-[11px] text-slate-400 mt-1">Compliance actions recorded</p>
-        </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Active Campaigns
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
-              <ShieldCheck className="w-4 h-4" />
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Active Campaigns
+              </div>
+              <div className="mt-3 text-2xl font-bold text-slate-900">{stats.campaignsTotal}</div>
+              <p className="text-[11px] text-slate-400 mt-1">Security initiatives</p>
             </div>
-          </div>
-          <div className="mt-3 text-2xl font-bold text-slate-900">{stats.campaignsTotal}</div>
-          <p className="text-[11px] text-slate-400 mt-1">Security initiatives</p>
-        </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              Tenant Members
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
-              <Users className="w-4 h-4" />
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Tenant Members
+              </div>
+              <div className="mt-3 text-2xl font-bold text-slate-900">{stats.usersTotal}</div>
+              <p className="text-[11px] text-slate-400 mt-1">Provisioned accounts</p>
             </div>
-          </div>
-          <div className="mt-3 text-2xl font-bold text-slate-900">{stats.usersTotal}</div>
-          <p className="text-[11px] text-slate-400 mt-1">Provisioned accounts</p>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Two Columns: Recent Security Events & Recent Audit Logs */}
@@ -175,21 +149,21 @@ const DashboardOverview = () => {
         {/* Recent Security Events */}
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-rose-600" />
-              <h3 className="font-bold text-sm text-slate-900">Recent Security Events</h3>
-            </div>
+            <h3 className="font-bold text-sm text-slate-900">Recent Security Events</h3>
             <NavLink
               to="/admin/events"
-              className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1"
+              className="text-xs font-semibold text-sky-600 hover:text-sky-700"
             >
-              <span>View all</span>
-              <ArrowRight className="w-3 h-3" />
+              View all &rarr;
             </NavLink>
           </div>
 
           <div className="divide-y divide-slate-100 flex-1">
-            {recentEvents.length === 0 ? (
+            {loading ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                Loading recent security events...
+              </div>
+            ) : recentEvents.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
                 No security events detected.
               </div>
@@ -221,21 +195,21 @@ const DashboardOverview = () => {
         {/* Recent Audit Logs */}
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs flex flex-col">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-600" />
-              <h3 className="font-bold text-sm text-slate-900">Recent Audit Logs</h3>
-            </div>
+            <h3 className="font-bold text-sm text-slate-900">Recent Audit Logs</h3>
             <NavLink
               to="/admin/audit-logs"
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
             >
-              <span>View all</span>
-              <ArrowRight className="w-3 h-3" />
+              View all &rarr;
             </NavLink>
           </div>
 
           <div className="divide-y divide-slate-100 flex-1">
-            {recentLogs.length === 0 ? (
+            {loading ? (
+              <div className="p-8 text-center text-slate-400 text-xs animate-pulse">
+                Loading recent audit records...
+              </div>
+            ) : recentLogs.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-xs">
                 No audit activity recorded yet.
               </div>

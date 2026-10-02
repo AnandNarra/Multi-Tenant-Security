@@ -18,8 +18,9 @@ router.get('/health', (req, res) => {
 // Authentication Routes
 router.use('/auth', authRoutes);
 
-// User Management Routes (GET /api/users, POST /api/users)
+// User Management & Profile Routes (GET /api/users, GET /api/user/dashboard)
 router.use('/users', userRoutes);
+router.use('/user', userRoutes);
 
 // Campaign Management Routes
 router.use('/campaigns', campaignRoutes);

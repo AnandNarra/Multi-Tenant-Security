@@ -10,8 +10,15 @@ import UsersManager from './components/UsersManager';
 import CampaignsManager from './components/CampaignsManager';
 import EventsManager from './components/EventsManager';
 import AuditLogsManager from './components/AuditLogsManager';
-import ManagerDashboardPage from './pages/ManagerDashboardPage';
-import UserDashboardPage from './pages/UserDashboardPage';
+import ManagerLayout from './layouts/ManagerLayout';
+import ManagerDashboard from './pages/manager/ManagerDashboard';
+import ManagerCampaigns from './pages/manager/ManagerCampaigns';
+import ManagerCampaignDetails from './pages/manager/ManagerCampaignDetails';
+import ManagerSecurityEvents from './pages/manager/ManagerSecurityEvents';
+import UserLayout from './layouts/UserLayout';
+import UserDashboard from './pages/user/UserDashboard';
+import UserCampaigns from './pages/user/UserCampaigns';
+import UserCampaignDetails from './pages/user/UserCampaignDetails';
 
 // Helper component to route logged-in users to their role-specific dashboard
 const RoleDashboardRedirect = () => {
@@ -53,14 +60,25 @@ function App() {
             </Route>
           </Route>
 
-          {/* MANAGER Role Protected Route */}
+          {/* MANAGER Role Protected Routes */}
           <Route element={<ProtectedRoute allowedRoles={['MANAGER']} />}>
-            <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
+            <Route path="/manager" element={<ManagerLayout />}>
+              <Route index element={<Navigate to="/manager/dashboard" replace />} />
+              <Route path="dashboard" element={<ManagerDashboard />} />
+              <Route path="campaigns" element={<ManagerCampaigns />} />
+              <Route path="campaigns/:id" element={<ManagerCampaignDetails />} />
+              <Route path="security-events" element={<ManagerSecurityEvents />} />
+            </Route>
           </Route>
 
-          {/* USER Role Protected Route */}
+          {/* USER Role Protected Routes */}
           <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
-            <Route path="/user/dashboard" element={<UserDashboardPage />} />
+            <Route path="/user" element={<UserLayout />}>
+              <Route index element={<Navigate to="/user/dashboard" replace />} />
+              <Route path="dashboard" element={<UserDashboard />} />
+              <Route path="campaigns" element={<UserCampaigns />} />
+              <Route path="campaigns/:id" element={<UserCampaignDetails />} />
+            </Route>
           </Route>
 
           {/* Fallback Redirect */}
