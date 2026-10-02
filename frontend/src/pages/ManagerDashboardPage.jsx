@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { organizationAPI } from '../api/api';
+import CampaignsManager from '../components/CampaignsManager';
+import EventsManager from '../components/EventsManager';
 import {
   Users,
   Building2,
@@ -15,13 +17,15 @@ import {
   RefreshCw,
   AlertCircle,
   FileCheck2,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 
 const ManagerDashboardPage = () => {
   const { user, logout } = useAuth();
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('team');
+  const [activeTab, setActiveTab] = useState('campaigns');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Manager interactive workflow state (all live state, no dummy data file)
@@ -81,7 +85,7 @@ const ManagerDashboardPage = () => {
               <span className="font-bold text-lg tracking-tight text-slate-900 block leading-none">
                 Manager Workspace
               </span>
-              <span className="text-[11px] font-medium text-slate-500">Team Operations & Approvals</span>
+              <span className="text-[11px] font-medium text-slate-500">Team Operations & Campaigns</span>
             </div>
           </div>
 
@@ -117,69 +121,42 @@ const ManagerDashboardPage = () => {
               </span>
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Oversee departmental operations, member assignments, and approval workflows.
+              Oversee campaigns, departmental operations, security events, and approval workflows.
             </p>
-          </div>
-        </div>
-
-        {/* Manager Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Team Size
-              </span>
-              <div className="p-2.5 rounded-xl bg-teal-50 text-teal-600 border border-teal-100">
-                <Users className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-slate-900">{teamMembers.length}</span>
-              <span className="text-xs text-slate-500">assigned members</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Pending Approvals
-              </span>
-              <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
-                <Clock className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-slate-900">{pendingCount}</span>
-              <span className="text-xs text-amber-600 font-medium">requires action</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Linked Organizations
-              </span>
-              <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <Building2 className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-slate-900">{organizations.length}</span>
-              <span className="text-xs text-slate-500">active divisions</span>
-            </div>
           </div>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex border-b border-slate-200 gap-6 text-sm font-medium">
           <button
-            onClick={() => setActiveTab('team')}
-            className={`pb-3 border-b-2 cursor-pointer transition-colors ${activeTab === 'team'
+            onClick={() => setActiveTab('campaigns')}
+            className={`pb-3 border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'campaigns'
                 ? 'border-teal-600 text-teal-700 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
           >
-            Team Roster & Workload
+            <ShieldCheck className="w-4 h-4" />
+            <span>Security Campaigns</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('events')}
+            className={`pb-3 border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'events'
+                ? 'border-teal-600 text-teal-700 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <ShieldAlert className="w-4 h-4" />
+            <span>Security Events</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('team')}
+            className={`pb-3 border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'team'
+                ? 'border-teal-600 text-teal-700 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Team Roster & Workload</span>
           </button>
           <button
             onClick={() => setActiveTab('approvals')}
@@ -198,7 +175,11 @@ const ManagerDashboardPage = () => {
         </div>
 
         {/* Tab Contents */}
-        {activeTab === 'team' ? (
+        {activeTab === 'campaigns' ? (
+          <CampaignsManager />
+        ) : activeTab === 'events' ? (
+          <EventsManager />
+        ) : activeTab === 'team' ? (
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 text-sm">Department Members</h3>

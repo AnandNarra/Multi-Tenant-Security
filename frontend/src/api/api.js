@@ -34,4 +34,27 @@ export const userAPI = {
   createInUsers: (userData) => api.post('/users', userData),
 };
 
+export const campaignAPI = {
+  getAll: (params) => api.get('/campaigns', { params }),
+  getById: (id) => api.get(`/campaigns/${id}`),
+  create: (campaignData) => api.post('/campaigns', campaignData),
+  update: (id, campaignData) => api.patch(`/campaigns/${id}`, campaignData),
+  delete: (id) => api.delete(`/campaigns/${id}`),
+  assignUser: (campaignId, userId) => api.post(`/campaigns/${campaignId}/users`, { userId }),
+  removeUser: (campaignId, userId) => api.delete(`/campaigns/${campaignId}/users/${userId}`),
+};
+
+export const securityEventAPI = {
+  getAll: (params) => api.get('/security-events', { params }),
+  getById: (id) => api.get(`/security-events/${id}`),
+  create: (eventData) => api.post('/security-events', eventData),
+  updateStatus: (id, status) => api.patch(`/security-events/${id}/status`, { status }),
+};
+
+export const auditLogAPI = {
+  getAll: (params) => api.get('/audit-logs', { params }),
+  getById: (id) => api.get(`/audit-logs/${id}`),
+};
+
 export default api;
+

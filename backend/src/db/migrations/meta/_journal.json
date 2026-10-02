@@ -15,6 +15,20 @@
       "when": 1790866834897,
       "tag": "0001_last_rick_jones",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790918846580,
+      "tag": "0002_military_meteorite",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790922287634,
+      "tag": "0003_dark_shotgun",
+      "breakpoints": true
     }
   ]
 }

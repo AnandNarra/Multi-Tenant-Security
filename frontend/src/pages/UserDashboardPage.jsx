@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { organizationAPI } from '../api/api';
+import CampaignsManager from '../components/CampaignsManager';
 import {
   User,
   Building2,
@@ -21,6 +22,7 @@ const UserDashboardPage = () => {
   const { user, logout } = useAuth();
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('campaigns');
 
   // User interactive tasks state (live state, zero dummy files)
   const [myTasks, setMyTasks] = useState([
@@ -104,60 +106,39 @@ const UserDashboardPage = () => {
               </span>
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Welcome to your dedicated member dashboard and project space.
+              Welcome to your dedicated member dashboard, campaigns, and security space.
             </p>
           </div>
         </div>
 
-        {/* User Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Assigned Organization
-              </span>
-              <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-                <Building2 className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <span className="text-xl font-bold text-slate-900 block truncate">{primaryOrg.name}</span>
-              <span className="text-xs text-slate-500 font-mono">{primaryOrg.domain}</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Completed Tasks
-              </span>
-              <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-slate-900">{completedCount}</span>
-              <span className="text-xs text-slate-500">of {myTasks.length} finished</span>
-            </div>
-          </div>
-
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Access Level
-              </span>
-              <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-            </div>
-            <div className="mt-4 flex items-baseline gap-2">
-              <span className="text-xl font-bold text-slate-900">Member Workspace</span>
-              <span className="text-xs text-emerald-600 font-semibold">Active</span>
-            </div>
-          </div>
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-200 gap-6 text-sm font-medium">
+          <button
+            onClick={() => setActiveTab('campaigns')}
+            className={`pb-3 border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'campaigns'
+                ? 'border-emerald-600 text-emerald-700 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <ShieldCheck className="w-4 h-4" />
+            <span>Assigned Campaigns</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('tasks')}
+            className={`pb-3 border-b-2 cursor-pointer transition-colors flex items-center gap-2 ${activeTab === 'tasks'
+                ? 'border-emerald-600 text-emerald-700 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Workflow Tasks</span>
+          </button>
         </div>
 
-        {/* Task and Work items list */}
+        {/* Tab Contents */}
+        {activeTab === 'campaigns' ? (
+          <CampaignsManager />
+        ) : (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -213,6 +194,7 @@ const UserDashboardPage = () => {
             ))}
           </div>
         </div>
+        )}
       </main>
     </div>
   );

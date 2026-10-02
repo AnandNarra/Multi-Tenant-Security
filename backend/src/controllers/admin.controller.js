@@ -3,6 +3,8 @@ import { db } from '../db/index.js';
 import { users } from '../db/schema/index.js';
 import { validateCreateUser } from '../validators/user.validator.js';
 import { hashPassword } from '../utils/password.js';
+import { createAuditLog } from '../services/audit.service.js';
+import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES } from '../utils/auditActions.js';
 
 export const createUser = async (req, res) => {
   try {
@@ -73,26 +75,47 @@ export const createUser = async (req, res) => {
     // 5. Hash password using bcrypt utility
     const passwordHash = await hashPassword(password);
 
-    // 6. Insert new user into database scoped to the organization
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        organizationId,
-        name: name.trim(),
-        email: normalizedEmail,
-        passwordHash,
-        role,
-        status: status || 'ACTIVE',
-      })
-      .returning({
-        id: users.id,
-        name: users.name,
-        email: users.email,
-        role: users.role,
-        status: users.status,
-        organizationId: users.organizationId,
-        createdAt: users.createdAt,
-      });
+    // 6. Insert new user into database and record audit log within a transaction
+    const newUser = await db.transaction(async (tx) => {
+      const [insertedUser] = await tx
+        .insert(users)
+        .values({
+          organizationId,
+          name: name.trim(),
+          email: normalizedEmail,
+          passwordHash,
+          role,
+          status: status || 'ACTIVE',
+        })
+        .returning({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          role: users.role,
+          status: users.status,
+          organizationId: users.organizationId,
+          createdAt: users.createdAt,
+        });
+
+      // Create Audit Log
+      await createAuditLog(
+        {
+          organizationId,
+          userId: req.user.id,
+          action: AUDIT_ACTIONS.USER_CREATED,
+          resourceType: AUDIT_RESOURCE_TYPES.USER,
+          resourceId: insertedUser.id,
+          description: 'User created',
+          metadata: {
+            role: insertedUser.role,
+            status: insertedUser.status,
+          },
+        },
+        tx
+      );
+
+      return insertedUser;
+    });
 
     // 7. Return safe 201 response (never return password or hash)
     return res.status(201).json({

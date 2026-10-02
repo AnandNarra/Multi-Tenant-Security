@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { organizations, users, refreshTokens } from '../db/schema/index.js';
+import { organizations, users, refreshTokens, securityEvents } from '../db/schema/index.js';
 import { validateRegistration, validateLogin } from '../validators/auth.validator.js';
 import { hashPassword, comparePassword } from '../utils/password.js';
 import { generateAccessToken, generateRefreshToken, hashToken } from '../utils/jwt.js';
+import { createAuditLog } from '../services/audit.service.js';
+import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES } from '../utils/auditActions.js';
 
 export const registerOrganization = async (req, res) => {
   try {
@@ -133,6 +135,24 @@ export const loginUser = async (req, res) => {
 
     // 3. Status check: Inactive users cannot log in (do not expose account status)
     if (user.status && user.status !== 'ACTIVE') {
+      // Record failed login audit log and security event
+      await createAuditLog({
+        organizationId: user.organizationId,
+        userId: user.id,
+        action: AUDIT_ACTIONS.LOGIN_FAILED,
+        resourceType: AUDIT_RESOURCE_TYPES.AUTH,
+        description: 'Failed login attempt',
+      });
+
+      await db.insert(securityEvents).values({
+        organizationId: user.organizationId,
+        userId: user.id,
+        eventType: 'LOGIN_FAILED',
+        severity: 'MEDIUM',
+        status: 'OPEN',
+        description: 'Failed login attempt',
+      });
+
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -143,6 +163,24 @@ export const loginUser = async (req, res) => {
     const isPasswordValid = await comparePassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
+      // Record failed login audit log and security event
+      await createAuditLog({
+        organizationId: user.organizationId,
+        userId: user.id,
+        action: AUDIT_ACTIONS.LOGIN_FAILED,
+        resourceType: AUDIT_RESOURCE_TYPES.AUTH,
+        description: 'Failed login attempt',
+      });
+
+      await db.insert(securityEvents).values({
+        organizationId: user.organizationId,
+        userId: user.id,
+        eventType: 'LOGIN_FAILED',
+        severity: 'MEDIUM',
+        status: 'OPEN',
+        description: 'Failed login attempt',
+      });
+
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password',
@@ -183,7 +221,25 @@ export const loginUser = async (req, res) => {
       expiresAt,
     });
 
-    // 8. Set HTTP-Only Refresh Token Cookie
+    // 8. Create Audit Log and Security Event for successful login
+    await createAuditLog({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: AUDIT_ACTIONS.LOGIN_SUCCESS,
+      resourceType: AUDIT_RESOURCE_TYPES.AUTH,
+      description: 'User logged in successfully',
+    });
+
+    await db.insert(securityEvents).values({
+      organizationId: user.organizationId,
+      userId: user.id,
+      eventType: 'LOGIN_SUCCESS',
+      severity: 'LOW',
+      status: 'RESOLVED',
+      description: 'Successful login',
+    });
+
+    // 9. Set HTTP-Only Refresh Token Cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -192,7 +248,7 @@ export const loginUser = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    // 9. Return Safe Response
+    // 10. Return Safe Response
     return res.status(200).json({
       success: true,
       message: 'Login successful',
@@ -229,6 +285,24 @@ export const logoutUser = async (req, res) => {
     if (rawRefreshToken) {
       // 1. Hash the incoming refresh token using the same hashing strategy
       const tokenHash = hashToken(rawRefreshToken);
+
+      // Find token record to record logout audit log
+      const [tokenRecord] = await db
+        .select({ userId: refreshTokens.userId, organizationId: users.organizationId })
+        .from(refreshTokens)
+        .leftJoin(users, eq(refreshTokens.userId, users.id))
+        .where(eq(refreshTokens.tokenHash, tokenHash))
+        .limit(1);
+
+      if (tokenRecord && tokenRecord.organizationId) {
+        await createAuditLog({
+          organizationId: tokenRecord.organizationId,
+          userId: tokenRecord.userId,
+          action: AUDIT_ACTIONS.LOGOUT,
+          resourceType: AUDIT_RESOURCE_TYPES.AUTH,
+          description: 'User logged out',
+        });
+      }
 
       // 2. Revoke the token record in PostgreSQL by setting revoked_at timestamp
       await db

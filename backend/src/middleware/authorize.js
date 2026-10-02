@@ -1,5 +1,5 @@
 export const authorizeRoles = (...roles) => {
-  let customMessage = 'You do not have permission to perform this action';
+  let customMessage = null;
   let allowedRoles = roles;
 
   // If last argument is a string that is not an uppercase role, treat as custom message
@@ -26,9 +26,11 @@ export const authorizeRoles = (...roles) => {
 
     if (!normalizedAllowedRoles.includes(userRole)) {
       const message =
-        normalizedAllowedRoles.length === 1 && normalizedAllowedRoles[0] === 'ADMIN'
+        customMessage !== null
+          ? customMessage
+          : normalizedAllowedRoles.length === 1 && normalizedAllowedRoles[0] === 'ADMIN'
           ? 'You do not have permission to create users'
-          : customMessage;
+          : 'You do not have permission to perform this action';
 
       return res.status(403).json({
         success: false,
